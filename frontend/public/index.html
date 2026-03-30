@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Market Report Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0d0f12;
+    --surface:  #13161b;
+    --border:   #1e2329;
+    --border2:  #2a3040;
+    --text:     #d4d8e0;
+    --muted:    #5a6070;
+    --accent:   #c8a96e;
+    --accent2:  #7eb8c4;
+    --danger:   #c46060;
+    --success:  #5ea87a;
+    --draft:    #5a6070;
+    --approved: #7eb8c4;
+    --sent:     #5ea87a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Login ─────────────────────────────────────────────────── */
+  #login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% -10%, rgba(200,169,110,0.08) 0%, transparent 70%),
+      var(--bg);
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .login-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .login-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+  }
+
+  .field {
+    margin-bottom: 1.2rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  input[type=text], input[type=password], textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+
+  textarea {
+    resize: vertical;
+    min-height: 180px;
+    line-height: 1.7;
+    font-size: 0.85rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.4rem;
+    border: none;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+
+  .btn-primary  { background: var(--accent);  color: #0d0f12; }
+  .btn-outline  { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+  .btn-approve  { background: var(--accent2); color: #0d0f12; }
+  .btn-send     { background: var(--success);  color: #0d0f12; }
+  .btn-danger   { background: var(--danger);   color: #fff; }
+  .btn-full     { width: 100%; justify-content: center; }
+
+  .error-msg {
+    font-size: 0.78rem;
+    color: var(--danger);
+    margin-top: 0.8rem;
+    min-height: 1.2em;
+  }
+
+  /* ── App shell ─────────────────────────────────────────────── */
+  #app { display: none; min-height: 100vh; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .user-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  /* ── Status badge ──────────────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.65rem;
+    border-radius: 2px;
+  }
+  .badge-draft    { background: rgba(90,96,112,0.2);  color: var(--draft);    border: 1px solid rgba(90,96,112,0.4); }
+  .badge-approved { background: rgba(126,184,196,0.1); color: var(--approved); border: 1px solid rgba(126,184,196,0.3); }
+  .badge-sent     { background: rgba(94,168,122,0.1);  color: var(--sent);     border: 1px solid rgba(94,168,122,0.3); }
+
+  /* ── Report card ───────────────────────────────────────────── */
+  .report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .report-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .report-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1.8rem 0;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+
+  .commentary-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 1.2rem 1.4rem;
+    border-radius: 0 4px 4px 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    min-height: 60px;
+  }
+
+  .commentary-empty {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.85rem;
+  }
+
+  /* ── Action row ────────────────────────────────────────────── */
+  .actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+
+  /* ── Confirmation overlay ──────────────────────────────────── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 2rem;
+    max-width: 440px;
+    width: 100%;
+    animation: slideUp 0.2s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .modal-body {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .modal-actions { display: flex; gap: 0.7rem; justify-content: flex-end; }
+
+  /* ── Audit log ─────────────────────────────────────────────── */
+  .audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .audit-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .audit-table td {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .audit-table tr:last-child td { border-bottom: none; }
+  .audit-action { color: var(--accent); }
+
+  /* ── Toast ─────────────────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 0.9rem 1.3rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+    z-index: 999;
+    max-width: 320px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-left: 3px solid var(--success); }
+  #toast.error   { border-left: 3px solid var(--danger);  }
+
+  /* ── Tabs ──────────────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+
+  .tab {
+    padding: 0.7rem 1.3rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Spinner ───────────────────────────────────────────────── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    padding: 2rem 0;
+  }
+
+  /* ── Sent banner ───────────────────────────────────────────── */
+  .sent-banner {
+    background: rgba(94,168,122,0.07);
+    border: 1px solid rgba(94,168,122,0.25);
+    color: var(--sent);
+    padding: 1rem 1.4rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 0.9rem 1rem; }
+    main   { padding: 1.5rem 1rem; }
+    .report-header { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Market Portal</div>
+    <div class="login-sub">Internal Distribution System</div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="login-user" autocomplete="username" placeholder="username"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••"/>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ APP ═════════════════════════════════════ -->
+<div id="app">
+
+  <header>
+    <div class="header-logo">Market Portal</div>
+    <div class="header-right">
+      <span class="user-pill" id="header-user"></span>
+      <button class="btn btn-outline" style="padding:0.45rem 0.9rem;font-size:0.72rem;" onclick="doLogout()">Sign Out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('report')">Current Report</div>
+      <div class="tab" onclick="switchTab('audit')">Audit Log</div>
+    </div>
+
+    <!-- ── Report tab ─────────────────────────────────────────── -->
+    <div class="tab-panel active" id="tab-report">
+
+      <div id="report-loading" class="loading-state">
+        <div class="spinner"></div> Loading report…
+      </div>
+
+      <div id="report-content" style="display:none">
+
+        <div class="report-header">
+          <div>
+            <div class="report-title" id="r-title"></div>
+            <div class="report-meta">
+              <span id="r-date"></span>
+              &nbsp;·&nbsp;
+              Updated <span id="r-updated"></span>
+            </div>
+          </div>
+          <div style="padding-top:0.3rem">
+            <span class="badge" id="r-badge"></span>
+          </div>
+        </div>
+
+        <!-- Sent banner (shown when sent) -->
+        <div id="sent-banner" class="sent-banner" style="display:none">
+          ✓ This report was dispatched on <span id="r-sent-at" style="margin-left:0.3rem;font-family:'DM Mono',monospace;"></span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Commentary editor (draft mode) -->
+        <div id="editor-section">
+          <div class="section-label">Commentary</div>
+          <textarea id="commentary-input" placeholder="Add your market commentary here…"></textarea>
+          <div style="margin-top:0.8rem;display:flex;gap:0.7rem;">
+            <button class="btn btn-outline" onclick="saveCommentary()">Save Draft</button>
+          </div>
+        </div>
+
+        <!-- Commentary preview (approved/sent mode) -->
+        <div id="preview-section" style="display:none">
+          <div class="section-label">Commentary</div>
+          <div class="commentary-preview" id="commentary-preview"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Action row -->
+        <div class="actions" id="action-row"></div>
+
+      </div>
+    </div>
+
+    <!-- ── Audit tab ──────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-audit">
+      <div id="audit-loading" class="loading-state">
+        <div class="spinner"></div> Loading audit log…
+      </div>
+      <table class="audit-table" id="audit-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="audit-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════ CONFIRM MODAL ═══════════════════════════ -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TOAST ═══════════════════════════════════ -->
+<div id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentReport = null;
+let pendingAction = null;
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function toast(msg, type = 'success') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 3000);
+}
+
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString('en-AU', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-AU', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+}
+
+async function api(method, path, body) {
+  const opts = {
+    method,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = $('login-user').value.trim();
+  const password = $('login-pass').value;
+  $('login-error').textContent = '';
+  try {
+    await api('POST', '/api/auth/login', { username, password });
+    showApp(username);
+  } catch (e) {
+    $('login-error').textContent = e.message;
+  }
+}
+
+$('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+async function doLogout() {
+  await api('POST', '/api/auth/logout').catch(() => {});
+  location.reload();
+}
+
+function showApp(username) {
+  $('login-screen').style.display = 'none';
+  $('app').style.display = 'block';
+  $('header-user').textContent = username;
+  loadReport();
+}
+
+// ── Boot check ────────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const me = await api('GET', '/api/auth/me');
+    if (me.authenticated) showApp(me.username);
+  } catch {}
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const name = ['report','audit'][i];
+    t.classList.toggle('active', name === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach((p, i) => {
+    const name = ['report','audit'][i];
+    p.classList.toggle('active', name === tab);
+  });
+  if (tab === 'audit') loadAudit();
+}
+
+// ── Report ────────────────────────────────────────────────────────────────────
+async function loadReport() {
+  $('report-loading').style.display = 'flex';
+  $('report-content').style.display = 'none';
+  try {
+    const report = await api('GET', '/api/reports/latest');
+    currentReport = report;
+    renderReport(report);
+  } catch (e) {
+    $('report-loading').innerHTML = `<span style="color:var(--danger)">⚠ ${e.message}</span>`;
+  }
+}
+
+function renderReport(r) {
+  $('report-loading').style.display = 'none';
+  $('report-content').style.display = 'block';
+
+  $('r-title').textContent = r.title;
+  $('r-date').textContent = fmtDate(r.report_date);
+  $('r-updated').textContent = fmt(r.updated_at);
+
+  // Badge
+  const badge = $('r-badge');
+  badge.className = `badge badge-${r.status}`;
+  badge.textContent = r.status.toUpperCase();
+
+  // Sent banner
+  if (r.status === 'sent') {
+    $('sent-banner').style.display = 'flex';
+    $('r-sent-at').textContent = fmt(r.sent_at);
+  } else {
+    $('sent-banner').style.display = 'none';
+  }
+
+  // Commentary
+  const isDraft = r.status === 'draft';
+  $('editor-section').style.display = isDraft ? 'block' : 'none';
+  $('preview-section').style.display = isDraft ? 'none' : 'block';
+
+  if (isDraft) {
+    $('commentary-input').value = r.commentary || '';
+  } else {
+    const preview = $('commentary-preview');
+    if (r.commentary) {
+      preview.textContent = r.commentary;
+      preview.classList.remove('commentary-empty');
+    } else {
+      preview.textContent = 'No commentary was added.';
+      preview.classList.add('commentary-empty');
+    }
+  }
+
+  // Action row
+  const row = $('action-row');
+  row.innerHTML = '';
+
+  if (r.status === 'draft') {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-approve';
+    btn.textContent = 'Approve Report';
+    btn.onclick = () => openModal('approve');
+    row.appendChild(btn);
+  }
+
+  if (r.status === 'approved') {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-send';
+    btn.textContent = '⚡ Dispatch via n8n';
+    btn.onclick = () => openModal('send');
+    row.appendChild(btn);
+
+    const revert = document.createElement('button');
+    revert.className = 'btn btn-outline';
+    revert.textContent = 'Edit Commentary';
+    revert.onclick = () => toast('To edit, revert the report to draft from your database or create a new report.', 'error');
+    row.appendChild(revert);
+  }
+}
+
+async function saveCommentary() {
+  if (!currentReport) return;
+  const commentary = $('commentary-input').value;
+  try {
+    const updated = await api('PATCH', `/api/reports/${currentReport.id}/commentary`, { commentary });
+    currentReport = updated;
+    toast('Commentary saved.');
+    $('r-updated').textContent = fmt(updated.updated_at);
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(action) {
+  pendingAction = action;
+  const overlay = $('modal-overlay');
+
+  if (action === 'approve') {
+    $('modal-title').textContent = 'Approve this report?';
+    $('modal-body').textContent = 'Approving will lock the commentary. You will then be able to dispatch the report via n8n.';
+    $('modal-confirm-btn').className = 'btn btn-approve';
+    $('modal-confirm-btn').textContent = 'Approve';
+  } else if (action === 'send') {
+    $('modal-title').textContent = 'Dispatch to distribution list?';
+    $('modal-body').textContent = 'This will trigger your n8n workflow which will send the report via Mailgun. This action cannot be undone.';
+    $('modal-confirm-btn').className = 'btn btn-send';
+    $('modal-confirm-btn').textContent = '⚡ Dispatch Now';
+  }
+
+  overlay.classList.add('open');
+}
+
+function closeModal() {
+  $('modal-overlay').classList.remove('open');
+  pendingAction = null;
+}
+
+async function confirmAction() {
+  if (!pendingAction || !currentReport) return;
+  const btn = $('modal-confirm-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    if (pendingAction === 'approve') {
+      const updated = await api('POST', `/api/reports/${currentReport.id}/approve`);
+      currentReport = updated;
+      toast('Report approved.');
+      renderReport(updated);
+    } else if (pendingAction === 'send') {
+      await api('POST', `/api/reports/${currentReport.id}/send`);
+      toast('Report dispatched successfully!');
+      await loadReport();
+    }
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    closeModal();
+  }
+}
+
+$('modal-overlay').addEventListener('click', e => {
+  if (e.target === $('modal-overlay')) closeModal();
+});
+
+// ── Audit ─────────────────────────────────────────────────────────────────────
+async function loadAudit() {
+  $('audit-loading').style.display = 'flex';
+  $('audit-table').style.display = 'none';
+  try {
+    const rows = await api('GET', '/api/audit');
+    const tbody = $('audit-body');
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td style="white-space:nowrap;color:var(--muted)">${fmt(r.created_at)}</td>
+        <td>${r.username || '—'}</td>
+        <td class="audit-action">${r.action}</td>
+        <td style="color:var(--muted)">${r.detail || '—'}</td>
+      </tr>
+    `).join('');
+    $('audit-loading').style.display = 'none';
+    $('audit-table').style.display = 'table';
+  } catch (e) {
+    $('audit-loading').innerHTML = `<span style="color:var(--danger)">⚠ ${e.message}</span>`;
+  }
+}
+</script>
+</body>
+</html>
