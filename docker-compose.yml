@@ -12,7 +12,7 @@ services:
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      POSTGRES_DB:   ${POSTGRES_DB:-market_portal}
+      POSTGRES_DB:   ${POSTGRES_DB:-weeklyreport}
       POSTGRES_USER: ${POSTGRES_USER:-portal_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL}
