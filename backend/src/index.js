@@ -13,63 +13,14 @@ const app = express();
 const pool = new Pool({
   host: process.env.POSTGRES_HOST || 'postgres',
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  database: process.env.POSTGRES_DB || 'market_portal',
+  database: process.env.POSTGRES_DB || 'weeklyreport',
   user: process.env.POSTGRES_USER || 'portal_user',
   password: process.env.POSTGRES_PASSWORD,
 });
 
-// ── Init DB schema ────────────────────────────────────────────────────────────
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS reports (
-      id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL,
-      report_date DATE NOT NULL DEFAULT CURRENT_DATE,
-      status TEXT NOT NULL DEFAULT 'draft',
-      commentary TEXT DEFAULT '',
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      updated_at TIMESTAMPTZ DEFAULT NOW(),
-      sent_at TIMESTAMPTZ
-    );
-
-    CREATE TABLE IF NOT EXISTS audit_log (
-      id SERIAL PRIMARY KEY,
-      user_id INT REFERENCES users(id),
-      action TEXT NOT NULL,
-      report_id INT REFERENCES reports(id),
-      detail TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-  `);
-
-  // Seed an admin user if none exist
-  const existing = await pool.query('SELECT id FROM users LIMIT 1');
-  if (existing.rows.length === 0) {
-    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'changeme123', 12);
-    await pool.query(
-      'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
-      [process.env.ADMIN_USERNAME || 'admin', hash]
-    );
-    console.log('Seeded default admin user.');
-  }
-
-  // Seed a sample report if none exist
-  const reports = await pool.query('SELECT id FROM reports LIMIT 1');
-  if (reports.rows.length === 0) {
-    await pool.query(`
-      INSERT INTO reports (title, report_date, status)
-      VALUES ('Market Report – ' || TO_CHAR(NOW(), 'Mon DD, YYYY'), CURRENT_DATE, 'draft')
-    `);
-  }
-
-  console.log('Database ready.');
+async function connectDB() {
+  await pool.query('SELECT 1');
+  console.log('Database connection OK.');
 }
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -141,98 +92,102 @@ app.get('/api/auth/me', (req, res) => {
   res.json({ authenticated: true, username: req.session.username });
 });
 
-// ── Report routes ─────────────────────────────────────────────────────────────
-app.get('/api/reports', requireAuth, async (req, res) => {
-  const result = await pool.query(
-    'SELECT * FROM reports ORDER BY report_date DESC LIMIT 20'
-  );
-  res.json(result.rows);
-});
-
-app.get('/api/reports/latest', requireAuth, async (req, res) => {
-  const result = await pool.query(
-    "SELECT * FROM reports WHERE status != 'sent' ORDER BY report_date DESC LIMIT 1"
-  );
-  if (!result.rows[0]) return res.status(404).json({ error: 'No active report found' });
-  res.json(result.rows[0]);
-});
-
-app.get('/api/reports/:id', requireAuth, async (req, res) => {
-  const result = await pool.query('SELECT * FROM reports WHERE id = $1', [req.params.id]);
-  if (!result.rows[0]) return res.status(404).json({ error: 'Not found' });
-  res.json(result.rows[0]);
-});
-
-app.patch('/api/reports/:id/commentary', requireAuth, async (req, res) => {
-  const { commentary } = req.body;
-  if (typeof commentary === 'undefined') return res.status(400).json({ error: 'commentary required' });
-
+// ── Weekly sales + commentary ─────────────────────────────────────────────────
+// Returns S-region offering rows for the current Mon–Sun week,
+// each joined with existing commentary (if any)
+app.get('/api/week', requireAuth, async (req, res) => {
   try {
-    const result = await pool.query(
-      `UPDATE reports
-       SET commentary = $1, updated_at = NOW()
-       WHERE id = $2 AND status = 'draft'
-       RETURNING *`,
-      [commentary, req.params.id]
-    );
-    if (!result.rows[0]) return res.status(404).json({ error: 'Report not found or already sent' });
-
-    await pool.query(
-      'INSERT INTO audit_log (user_id, action, report_id, detail) VALUES ($1, $2, $3, $4)',
-      [req.session.userId, 'EDIT_COMMENTARY', req.params.id, `Commentary updated by ${req.session.username}`]
-    );
-
-    res.json(result.rows[0]);
+    const result = await pool.query(`
+      SELECT
+        o.sale_date,
+        o.offered,
+        o.sold,
+        o.passed_in,
+        o.reoffered,
+        c.salecommentary
+      FROM offering o
+      LEFT JOIN commentary c ON c.saledate = o.sale_date
+      WHERE
+        o.region_code = 'S'
+        AND o.sale_date >= date_trunc('week', CURRENT_DATE)
+        AND o.sale_date <  date_trunc('week', CURRENT_DATE) + INTERVAL '7 days'
+      ORDER BY o.sale_date ASC
+    `);
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Approve → moves status from draft to approved
-app.post('/api/reports/:id/approve', requireAuth, async (req, res) => {
+// ── Save commentary (upsert) ──────────────────────────────────────────────────
+app.post('/api/commentary', requireAuth, async (req, res) => {
+  const { saledate, salecommentary } = req.body;
+  if (!saledate || typeof salecommentary === 'undefined') {
+    return res.status(400).json({ error: 'saledate and salecommentary are required' });
+  }
+
   try {
-    const result = await pool.query(
-      `UPDATE reports SET status = 'approved', updated_at = NOW()
-       WHERE id = $1 AND status = 'draft'
-       RETURNING *`,
-      [req.params.id]
+    // Verify this date exists in the offering table for region S
+    const check = await pool.query(
+      "SELECT 1 FROM offering WHERE sale_date = $1 AND region_code = 'S'",
+      [saledate]
     );
-    if (!result.rows[0]) return res.status(400).json({ error: 'Report not found or not in draft state' });
+    if (!check.rows[0]) {
+      return res.status(400).json({ error: 'No S-region sale found for that date' });
+    }
+
+    // Upsert: update if exists, insert if not
+    await pool.query(`
+      INSERT INTO commentary (saledate, salecommentary)
+      VALUES ($1, $2)
+      ON CONFLICT (saledate)
+      DO UPDATE SET salecommentary = EXCLUDED.salecommentary
+    `, [saledate, salecommentary]);
 
     await pool.query(
-      'INSERT INTO audit_log (user_id, action, report_id, detail) VALUES ($1, $2, $3, $4)',
-      [req.session.userId, 'APPROVE', req.params.id, `Approved by ${req.session.username}`]
+      'INSERT INTO audit_log (user_id, action, detail) VALUES ($1, $2, $3)',
+      [req.session.userId, 'SAVE_COMMENTARY', `Commentary saved for ${saledate} by ${req.session.username}`]
     );
 
-    res.json(result.rows[0]);
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Send → calls n8n webhook, marks as sent
-app.post('/api/reports/:id/send', requireAuth, async (req, res) => {
+// ── Trigger n8n webhook ───────────────────────────────────────────────────────
+app.post('/api/dispatch', requireAuth, async (req, res) => {
   try {
-    const report = await pool.query('SELECT * FROM reports WHERE id = $1', [req.params.id]);
-    const r = report.rows[0];
-    if (!r) return res.status(404).json({ error: 'Not found' });
-    if (r.status !== 'approved') return res.status(400).json({ error: 'Report must be approved before sending' });
-
     const n8nUrl = process.env.N8N_WEBHOOK_URL;
     if (!n8nUrl) return res.status(500).json({ error: 'N8N_WEBHOOK_URL not configured' });
 
-    // Call n8n webhook with report data
+    // Gather this week's data + commentary to send along
+    const result = await pool.query(`
+      SELECT
+        o.sale_date,
+        o.offered,
+        o.sold,
+        o.passed_in,
+        o.reoffered,
+        c.salecommentary
+      FROM offering o
+      LEFT JOIN commentary c ON c.saledate = o.sale_date
+      WHERE
+        o.region_code = 'S'
+        AND o.sale_date >= date_trunc('week', CURRENT_DATE)
+        AND o.sale_date <  date_trunc('week', CURRENT_DATE) + INTERVAL '7 days'
+      ORDER BY o.sale_date ASC
+    `);
+
     const webhookRes = await fetch(n8nUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        report_id: r.id,
-        title: r.title,
-        report_date: r.report_date,
-        commentary: r.commentary,
         triggered_by: req.session.username,
+        week_starting: new Date(Date.now()).toISOString().split('T')[0],
+        sales: result.rows,
       }),
     });
 
@@ -243,13 +198,8 @@ app.post('/api/reports/:id/send', requireAuth, async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE reports SET status = 'sent', sent_at = NOW(), updated_at = NOW() WHERE id = $1`,
-      [r.id]
-    );
-
-    await pool.query(
-      'INSERT INTO audit_log (user_id, action, report_id, detail) VALUES ($1, $2, $3, $4)',
-      [req.session.userId, 'SEND', r.id, `Sent by ${req.session.username}`]
+      'INSERT INTO audit_log (user_id, action, detail) VALUES ($1, $2, $3)',
+      [req.session.userId, 'DISPATCH', `Report dispatched by ${req.session.username}`]
     );
 
     res.json({ ok: true, message: 'Report dispatched via n8n.' });
@@ -259,7 +209,7 @@ app.post('/api/reports/:id/send', requireAuth, async (req, res) => {
   }
 });
 
-// Audit log
+// ── Audit log ─────────────────────────────────────────────────────────────────
 app.get('/api/audit', requireAuth, async (req, res) => {
   const result = await pool.query(`
     SELECT al.*, u.username FROM audit_log al
@@ -276,9 +226,9 @@ app.get('*', (req, res) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-initDB().then(() => {
+connectDB().then(() => {
   app.listen(PORT, () => console.log(`Market Portal running on :${PORT}`));
 }).catch(err => {
-  console.error('Failed to initialise DB:', err);
+  console.error('Failed to connect to database:', err);
   process.exit(1);
 });
