@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Market Report Portal</title>
+<title>Weekly Report Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -16,11 +16,8 @@
     --muted:    #5a6070;
     --accent:   #c8a96e;
     --accent2:  #7eb8c4;
-    --danger:   #c46060;
     --success:  #5ea87a;
-    --draft:    #5a6070;
-    --approved: #7eb8c4;
-    --sent:     #5ea87a;
+    --danger:   #c46060;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,15 +39,10 @@
     justify-content: center;
     min-height: 100vh;
     padding: 2rem;
-    background:
-      radial-gradient(ellipse 60% 50% at 50% -10%, rgba(200,169,110,0.08) 0%, transparent 70%),
-      var(--bg);
+    background: radial-gradient(ellipse 60% 50% at 50% -10%, rgba(200,169,110,0.08) 0%, transparent 70%), var(--bg);
   }
 
-  .login-box {
-    width: 100%;
-    max-width: 380px;
-  }
+  .login-box { width: 100%; max-width: 380px; }
 
   .login-logo {
     font-family: 'Playfair Display', serif;
@@ -69,9 +61,7 @@
     margin-bottom: 2.5rem;
   }
 
-  .field {
-    margin-bottom: 1.2rem;
-  }
+  .field { margin-bottom: 1.2rem; }
 
   label {
     display: block;
@@ -98,9 +88,10 @@
 
   textarea {
     resize: vertical;
-    min-height: 180px;
+    min-height: 120px;
     line-height: 1.7;
     font-size: 0.85rem;
+    font-family: 'DM Sans', sans-serif;
   }
 
   .btn {
@@ -118,16 +109,14 @@
     cursor: pointer;
     transition: opacity 0.15s, transform 0.1s;
   }
-  .btn:hover { opacity: 0.85; }
+  .btn:hover  { opacity: 0.85; }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.35; cursor: default; }
 
-  .btn-primary  { background: var(--accent);  color: #0d0f12; }
-  .btn-outline  { background: transparent; border: 1px solid var(--border2); color: var(--text); }
-  .btn-approve  { background: var(--accent2); color: #0d0f12; }
-  .btn-send     { background: var(--success);  color: #0d0f12; }
-  .btn-danger   { background: var(--danger);   color: #fff; }
-  .btn-full     { width: 100%; justify-content: center; }
+  .btn-primary { background: var(--accent);  color: #0d0f12; }
+  .btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+  .btn-send    { background: var(--success); color: #0d0f12; }
+  .btn-full    { width: 100%; justify-content: center; }
 
   .error-msg {
     font-size: 0.78rem;
@@ -155,14 +144,9 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     color: var(--accent);
-    letter-spacing: 0.02em;
   }
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-  }
+  .header-right { display: flex; align-items: center; gap: 1.2rem; }
 
   .user-pill {
     font-family: 'DM Mono', monospace;
@@ -172,93 +156,207 @@
   }
 
   main {
-    max-width: 900px;
+    max-width: 860px;
     margin: 0 auto;
     padding: 2.5rem 2rem;
   }
 
-  /* ── Status badge ──────────────────────────────────────────── */
-  .badge {
-    display: inline-block;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 0.25rem 0.65rem;
-    border-radius: 2px;
-  }
-  .badge-draft    { background: rgba(90,96,112,0.2);  color: var(--draft);    border: 1px solid rgba(90,96,112,0.4); }
-  .badge-approved { background: rgba(126,184,196,0.1); color: var(--approved); border: 1px solid rgba(126,184,196,0.3); }
-  .badge-sent     { background: rgba(94,168,122,0.1);  color: var(--sent);     border: 1px solid rgba(94,168,122,0.3); }
-
-  /* ── Report card ───────────────────────────────────────────── */
-  .report-header {
+  /* ── Tabs ──────────────────────────────────────────────────── */
+  .tabs {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
+    border-bottom: 1px solid var(--border);
     margin-bottom: 2rem;
   }
 
-  .report-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.8rem;
-    font-weight: 600;
-    line-height: 1.2;
-    color: var(--text);
-    margin-bottom: 0.4rem;
+  .tab {
+    padding: 0.7rem 1.3rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+  .tab:hover  { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Week header ───────────────────────────────────────────── */
+  .week-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.8rem;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 
-  .report-meta {
+  .week-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .week-sub {
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
     color: var(--muted);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
 
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 1.8rem 0;
-  }
-
-  .section-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.8rem;
-  }
-
-  .commentary-preview {
+  /* ── Sale day card ─────────────────────────────────────────── */
+  .sale-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    padding: 1.2rem 1.4rem;
-    border-radius: 0 4px 4px 0;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    line-height: 1.75;
-    color: var(--text);
-    white-space: pre-wrap;
-    min-height: 60px;
+    border-radius: 6px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1.2rem;
+    transition: border-color 0.2s;
   }
+  .sale-card:focus-within { border-color: var(--border2); }
 
-  .commentary-empty {
-    color: var(--muted);
-    font-style: italic;
-    font-size: 0.85rem;
-  }
-
-  /* ── Action row ────────────────────────────────────────────── */
-  .actions {
+  .sale-card-header {
     display: flex;
-    gap: 0.8rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
     flex-wrap: wrap;
-    margin-top: 2rem;
+    gap: 0.5rem;
   }
 
-  /* ── Confirmation overlay ──────────────────────────────────── */
+  .sale-date-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .saved-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--success);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .saved-badge.show { opacity: 1; }
+
+  /* ── Stats row ─────────────────────────────────────────────── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .stat-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* ── Commentary area ───────────────────────────────────────── */
+  .commentary-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .commentary-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.6rem;
+  }
+
+  /* ── Dispatch section ──────────────────────────────────────── */
+  .dispatch-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .dispatch-info {
+    font-size: 0.82rem;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.5;
+  }
+
+  /* ── Empty state ───────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-state-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Audit table ───────────────────────────────────────────── */
+  .audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .audit-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .audit-table td {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .audit-table tr:last-child td { border-bottom: none; }
+  .audit-action { color: var(--accent); }
+
+  /* ── Confirm modal ─────────────────────────────────────────── */
   .overlay {
     display: none;
     position: fixed;
@@ -276,7 +374,7 @@
     border: 1px solid var(--border2);
     border-radius: 6px;
     padding: 2rem;
-    max-width: 440px;
+    max-width: 420px;
     width: 100%;
     animation: slideUp 0.2s ease;
   }
@@ -301,35 +399,6 @@
 
   .modal-actions { display: flex; gap: 0.7rem; justify-content: flex-end; }
 
-  /* ── Audit log ─────────────────────────────────────────────── */
-  .audit-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.78rem;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .audit-table th {
-    text-align: left;
-    color: var(--muted);
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 0.65rem;
-    padding: 0.5rem 0.8rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .audit-table td {
-    padding: 0.6rem 0.8rem;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-    vertical-align: top;
-  }
-
-  .audit-table tr:last-child td { border-bottom: none; }
-  .audit-action { color: var(--accent); }
-
   /* ── Toast ─────────────────────────────────────────────────── */
   #toast {
     position: fixed;
@@ -353,31 +422,6 @@
   #toast.success { border-left: 3px solid var(--success); }
   #toast.error   { border-left: 3px solid var(--danger);  }
 
-  /* ── Tabs ──────────────────────────────────────────────────── */
-  .tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 2rem;
-  }
-
-  .tab {
-    padding: 0.7rem 1.3rem;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
-    margin-bottom: -1px;
-  }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
   /* ── Spinner ───────────────────────────────────────────────── */
   .spinner {
     width: 18px; height: 18px;
@@ -395,26 +439,13 @@
     gap: 0.8rem;
     color: var(--muted);
     font-size: 0.82rem;
-    padding: 2rem 0;
-  }
-
-  /* ── Sent banner ───────────────────────────────────────────── */
-  .sent-banner {
-    background: rgba(94,168,122,0.07);
-    border: 1px solid rgba(94,168,122,0.25);
-    color: var(--sent);
-    padding: 1rem 1.4rem;
-    border-radius: 4px;
-    font-size: 0.82rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
+    padding: 3rem 0;
   }
 
   @media (max-width: 600px) {
     header { padding: 0.9rem 1rem; }
     main   { padding: 1.5rem 1rem; }
-    .report-header { flex-direction: column; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -423,8 +454,8 @@
 <!-- ═══════════════════════════════ LOGIN ═══════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">Market Portal</div>
-    <div class="login-sub">Internal Distribution System</div>
+    <div class="login-logo">Weekly Report</div>
+    <div class="login-sub">Commentary Portal</div>
     <div class="field">
       <label>Username</label>
       <input type="text" id="login-user" autocomplete="username" placeholder="username"/>
@@ -440,9 +471,8 @@
 
 <!-- ═══════════════════════════════ APP ═════════════════════════════════════ -->
 <div id="app">
-
   <header>
-    <div class="header-logo">Market Portal</div>
+    <div class="header-logo">Weekly Report</div>
     <div class="header-right">
       <span class="user-pill" id="header-user"></span>
       <button class="btn btn-outline" style="padding:0.45rem 0.9rem;font-size:0.72rem;" onclick="doLogout()">Sign Out</button>
@@ -451,61 +481,46 @@
 
   <main>
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('report')">Current Report</div>
+      <div class="tab active" onclick="switchTab('commentary')">Commentary</div>
       <div class="tab" onclick="switchTab('audit')">Audit Log</div>
     </div>
 
-    <!-- ── Report tab ─────────────────────────────────────────── -->
-    <div class="tab-panel active" id="tab-report">
+    <!-- ── Commentary tab ────────────────────────────────────── -->
+    <div class="tab-panel active" id="tab-commentary">
 
-      <div id="report-loading" class="loading-state">
-        <div class="spinner"></div> Loading report…
+      <div id="week-loading" class="loading-state">
+        <div class="spinner"></div> Loading this week's sales…
       </div>
 
-      <div id="report-content" style="display:none">
+      <div id="week-content" style="display:none">
 
-        <div class="report-header">
+        <div class="week-header">
           <div>
-            <div class="report-title" id="r-title"></div>
-            <div class="report-meta">
-              <span id="r-date"></span>
-              &nbsp;·&nbsp;
-              Updated <span id="r-updated"></span>
-            </div>
+            <div class="week-title">This Week's Sales</div>
+            <div class="week-sub" id="week-range"></div>
           </div>
-          <div style="padding-top:0.3rem">
-            <span class="badge" id="r-badge"></span>
+          <div class="week-sub">Southern Region</div>
+        </div>
+
+        <div id="sale-cards"></div>
+
+        <div class="dispatch-section">
+          <div class="dispatch-info">
+            When commentary is complete, dispatch the report to trigger
+            the n8n workflow and send the weekly report via Mailgun.
           </div>
+          <button class="btn btn-send" onclick="openDispatchModal()">
+            ⚡ Dispatch Report
+          </button>
         </div>
-
-        <!-- Sent banner (shown when sent) -->
-        <div id="sent-banner" class="sent-banner" style="display:none">
-          ✓ This report was dispatched on <span id="r-sent-at" style="margin-left:0.3rem;font-family:'DM Mono',monospace;"></span>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Commentary editor (draft mode) -->
-        <div id="editor-section">
-          <div class="section-label">Commentary</div>
-          <textarea id="commentary-input" placeholder="Add your market commentary here…"></textarea>
-          <div style="margin-top:0.8rem;display:flex;gap:0.7rem;">
-            <button class="btn btn-outline" onclick="saveCommentary()">Save Draft</button>
-          </div>
-        </div>
-
-        <!-- Commentary preview (approved/sent mode) -->
-        <div id="preview-section" style="display:none">
-          <div class="section-label">Commentary</div>
-          <div class="commentary-preview" id="commentary-preview"></div>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Action row -->
-        <div class="actions" id="action-row"></div>
 
       </div>
+
+      <div id="week-empty" class="empty-state" style="display:none">
+        <div class="empty-state-title">No sales this week</div>
+        <div>There are no Southern Region sales recorded for the current week (Mon–Sun).</div>
+      </div>
+
     </div>
 
     <!-- ── Audit tab ──────────────────────────────────────────── -->
@@ -528,14 +543,19 @@
   </main>
 </div>
 
-<!-- ═══════════════════════════════ CONFIRM MODAL ═══════════════════════════ -->
+<!-- ═══════════════════════════════ DISPATCH MODAL ══════════════════════════ -->
 <div class="overlay" id="modal-overlay">
   <div class="modal">
-    <div class="modal-title" id="modal-title"></div>
-    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-title">Dispatch weekly report?</div>
+    <div class="modal-body">
+      This will trigger the n8n workflow and send the report via Mailgun.
+      Make sure all commentary is saved before dispatching.
+    </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+      <button class="btn btn-send" id="modal-confirm-btn" onclick="confirmDispatch()">
+        ⚡ Dispatch Now
+      </button>
     </div>
   </div>
 </div>
@@ -544,10 +564,6 @@
 <div id="toast"></div>
 
 <script>
-// ── State ─────────────────────────────────────────────────────────────────────
-let currentReport = null;
-let pendingAction = null;
-
 // ── Utilities ─────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
@@ -555,7 +571,7 @@ function toast(msg, type = 'success') {
   const el = $('toast');
   el.textContent = msg;
   el.className = `show ${type}`;
-  setTimeout(() => el.className = '', 3000);
+  setTimeout(() => el.className = '', 3200);
 }
 
 function fmt(dateStr) {
@@ -567,10 +583,15 @@ function fmt(dateStr) {
 }
 
 function fmtDate(dateStr) {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-AU', {
-    day: 'numeric', month: 'long', year: 'numeric'
+  // Parse as local date to avoid UTC offset shifting the day
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
+    weekday: 'long', day: 'numeric', month: 'long'
   });
+}
+
+function fmtNum(n) {
+  return Number(n).toLocaleString('en-AU');
 }
 
 async function api(method, path, body) {
@@ -610,7 +631,7 @@ function showApp(username) {
   $('login-screen').style.display = 'none';
   $('app').style.display = 'block';
   $('header-user').textContent = username;
-  loadReport();
+  loadWeek();
 }
 
 // ── Boot check ────────────────────────────────────────────────────────────────
@@ -624,155 +645,125 @@ function showApp(username) {
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    const name = ['report','audit'][i];
-    t.classList.toggle('active', name === tab);
+    t.classList.toggle('active', ['commentary','audit'][i] === tab);
   });
   document.querySelectorAll('.tab-panel').forEach((p, i) => {
-    const name = ['report','audit'][i];
-    p.classList.toggle('active', name === tab);
+    p.classList.toggle('active', ['commentary','audit'][i] === tab);
   });
   if (tab === 'audit') loadAudit();
 }
 
-// ── Report ────────────────────────────────────────────────────────────────────
-async function loadReport() {
-  $('report-loading').style.display = 'flex';
-  $('report-content').style.display = 'none';
+// ── Week data ─────────────────────────────────────────────────────────────────
+async function loadWeek() {
+  $('week-loading').style.display = 'flex';
+  $('week-content').style.display = 'none';
+  $('week-empty').style.display = 'none';
+
   try {
-    const report = await api('GET', '/api/reports/latest');
-    currentReport = report;
-    renderReport(report);
-  } catch (e) {
-    $('report-loading').innerHTML = `<span style="color:var(--danger)">⚠ ${e.message}</span>`;
-  }
-}
+    const rows = await api('GET', '/api/week');
 
-function renderReport(r) {
-  $('report-loading').style.display = 'none';
-  $('report-content').style.display = 'block';
-
-  $('r-title').textContent = r.title;
-  $('r-date').textContent = fmtDate(r.report_date);
-  $('r-updated').textContent = fmt(r.updated_at);
-
-  // Badge
-  const badge = $('r-badge');
-  badge.className = `badge badge-${r.status}`;
-  badge.textContent = r.status.toUpperCase();
-
-  // Sent banner
-  if (r.status === 'sent') {
-    $('sent-banner').style.display = 'flex';
-    $('r-sent-at').textContent = fmt(r.sent_at);
-  } else {
-    $('sent-banner').style.display = 'none';
-  }
-
-  // Commentary
-  const isDraft = r.status === 'draft';
-  $('editor-section').style.display = isDraft ? 'block' : 'none';
-  $('preview-section').style.display = isDraft ? 'none' : 'block';
-
-  if (isDraft) {
-    $('commentary-input').value = r.commentary || '';
-  } else {
-    const preview = $('commentary-preview');
-    if (r.commentary) {
-      preview.textContent = r.commentary;
-      preview.classList.remove('commentary-empty');
-    } else {
-      preview.textContent = 'No commentary was added.';
-      preview.classList.add('commentary-empty');
+    if (!rows.length) {
+      $('week-loading').style.display = 'none';
+      $('week-empty').style.display = 'block';
+      return;
     }
-  }
 
-  // Action row
-  const row = $('action-row');
-  row.innerHTML = '';
+    // Week range label
+    const dates = rows.map(r => r.sale_date.split('T')[0]);
+    const first = fmtDate(dates[0]);
+    const last  = fmtDate(dates[dates.length - 1]);
+    $('week-range').textContent = dates.length === 1 ? first : `${first} – ${last}`;
 
-  if (r.status === 'draft') {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-approve';
-    btn.textContent = 'Approve Report';
-    btn.onclick = () => openModal('approve');
-    row.appendChild(btn);
-  }
+    // Render sale cards
+    const container = $('sale-cards');
+    container.innerHTML = '';
 
-  if (r.status === 'approved') {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-send';
-    btn.textContent = '⚡ Dispatch via n8n';
-    btn.onclick = () => openModal('send');
-    row.appendChild(btn);
+    rows.forEach(row => {
+      const saledate = row.sale_date.split('T')[0];
+      const passedPct = parseFloat(row.passed_in).toFixed(1);
+      const reoffPct  = parseFloat(row.reoffered).toFixed(1);
 
-    const revert = document.createElement('button');
-    revert.className = 'btn btn-outline';
-    revert.textContent = 'Edit Commentary';
-    revert.onclick = () => toast('To edit, revert the report to draft from your database or create a new report.', 'error');
-    row.appendChild(revert);
+      const card = document.createElement('div');
+      card.className = 'sale-card';
+      card.innerHTML = `
+        <div class="sale-card-header">
+          <div class="sale-date-label">${fmtDate(saledate)}</div>
+          <div class="saved-badge" id="badge-${saledate}">✓ Saved</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat">
+            <div class="stat-label">Offered</div>
+            <div class="stat-value">${fmtNum(row.offered)}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Sold</div>
+            <div class="stat-value">${fmtNum(row.sold)}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Passed In</div>
+            <div class="stat-value">${passedPct}<span class="stat-pct">%</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Reoffered</div>
+            <div class="stat-value">${reoffPct}<span class="stat-pct">%</span></div>
+          </div>
+        </div>
+        <div class="commentary-label">Commentary</div>
+        <textarea
+          id="commentary-${saledate}"
+          placeholder="Add commentary for this sale day…"
+        >${row.salecommentary || ''}</textarea>
+        <div class="commentary-actions">
+          <button class="btn btn-primary" onclick="saveCommentary('${saledate}')">Save</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    $('week-loading').style.display = 'none';
+    $('week-content').style.display = 'block';
+
+  } catch (e) {
+    $('week-loading').innerHTML = `<span style="color:var(--danger)">⚠ ${e.message}</span>`;
   }
 }
 
-async function saveCommentary() {
-  if (!currentReport) return;
-  const commentary = $('commentary-input').value;
+// ── Save commentary ───────────────────────────────────────────────────────────
+async function saveCommentary(saledate) {
+  const salecommentary = $(`commentary-${saledate}`).value;
   try {
-    const updated = await api('PATCH', `/api/reports/${currentReport.id}/commentary`, { commentary });
-    currentReport = updated;
+    await api('POST', '/api/commentary', { saledate, salecommentary });
+    const badge = $(`badge-${saledate}`);
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2500);
     toast('Commentary saved.');
-    $('r-updated').textContent = fmt(updated.updated_at);
   } catch (e) {
     toast(e.message, 'error');
   }
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
-function openModal(action) {
-  pendingAction = action;
-  const overlay = $('modal-overlay');
-
-  if (action === 'approve') {
-    $('modal-title').textContent = 'Approve this report?';
-    $('modal-body').textContent = 'Approving will lock the commentary. You will then be able to dispatch the report via n8n.';
-    $('modal-confirm-btn').className = 'btn btn-approve';
-    $('modal-confirm-btn').textContent = 'Approve';
-  } else if (action === 'send') {
-    $('modal-title').textContent = 'Dispatch to distribution list?';
-    $('modal-body').textContent = 'This will trigger your n8n workflow which will send the report via Mailgun. This action cannot be undone.';
-    $('modal-confirm-btn').className = 'btn btn-send';
-    $('modal-confirm-btn').textContent = '⚡ Dispatch Now';
-  }
-
-  overlay.classList.add('open');
+// ── Dispatch ──────────────────────────────────────────────────────────────────
+function openDispatchModal() {
+  $('modal-overlay').classList.add('open');
 }
 
 function closeModal() {
   $('modal-overlay').classList.remove('open');
-  pendingAction = null;
 }
 
-async function confirmAction() {
-  if (!pendingAction || !currentReport) return;
+async function confirmDispatch() {
   const btn = $('modal-confirm-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
-
   try {
-    if (pendingAction === 'approve') {
-      const updated = await api('POST', `/api/reports/${currentReport.id}/approve`);
-      currentReport = updated;
-      toast('Report approved.');
-      renderReport(updated);
-    } else if (pendingAction === 'send') {
-      await api('POST', `/api/reports/${currentReport.id}/send`);
-      toast('Report dispatched successfully!');
-      await loadReport();
-    }
+    await api('POST', '/api/dispatch');
+    toast('Report dispatched successfully!');
+    closeModal();
   } catch (e) {
     toast(e.message, 'error');
   } finally {
     btn.disabled = false;
-    closeModal();
+    btn.innerHTML = '⚡ Dispatch Now';
   }
 }
 
@@ -786,8 +777,7 @@ async function loadAudit() {
   $('audit-table').style.display = 'none';
   try {
     const rows = await api('GET', '/api/audit');
-    const tbody = $('audit-body');
-    tbody.innerHTML = rows.map(r => `
+    $('audit-body').innerHTML = rows.map(r => `
       <tr>
         <td style="white-space:nowrap;color:var(--muted)">${fmt(r.created_at)}</td>
         <td>${r.username || '—'}</td>
