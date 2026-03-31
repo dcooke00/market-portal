@@ -1,3 +1,4 @@
+const pgSession = require('connect-pg-simple')(require('express-session'));
 const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
@@ -33,6 +34,11 @@ app.use(cors({
 }));
 
 app.use(session({
+  store: new pgSession({
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true,
+  }),
   secret: process.env.SESSION_SECRET || 'replace-this-secret-in-production',
   resave: false,
   saveUninitialized: false,
